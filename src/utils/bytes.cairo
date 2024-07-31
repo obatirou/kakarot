@@ -1,6 +1,6 @@
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem, split_int, split_felt
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_unsigned_div_rem
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.memset import memset
 from starkware.cairo.common.registers import get_label_location
@@ -41,32 +41,36 @@ func felt_to_ascii{range_check_ptr}(dst: felt*, n: felt) -> felt {
 
 // @notice Split a felt into an array of bytes little endian
 // @dev Use a hint from split_int
-func felt_to_bytes_little(dst: felt*, value: felt) -> felt {
+func felt_to_bytes_little{range_check_ptr}(dst: felt*, value: felt) -> felt {
     alloc_locals;
 
+    local base_uint256: Uint256* = new Uint256(2 ** 8, 0);
+    tempvar range_check_ptr = range_check_ptr;
     tempvar value = value;
     tempvar bytes_len = 0;
 
     body:
+    let range_check_ptr = [ap - 3];
     let value = [ap - 2];
     let bytes_len = [ap - 1];
     let bytes = cast([fp - 4], felt*);
     let output = bytes + bytes_len;
     let base = 2 ** 8;
     let bound = base;
+    let uint256_value = felt_to_uint256([ap - 2]);
 
-    %{
-        memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base
-        assert res < ids.bound, f'split_int(): Limb {res} is out of range.'
-    %}
-    let byte = [output];
-    let value = (value - byte) / base;
+    let (_, r) = uint256_unsigned_div_rem(uint256_value, [base_uint256]);
+    assert [output] = r.low;
 
+    tempvar value = (value - r.low) / base;
+
+    tempvar range_check_ptr = range_check_ptr;
     tempvar value = value;
     tempvar bytes_len = bytes_len + 1;
 
     jmp body if value != 0;
 
+    let range_check_ptr = [ap - 3];
     let value = [ap - 2];
     let bytes_len = [ap - 1];
     assert value = 0;
@@ -75,7 +79,7 @@ func felt_to_bytes_little(dst: felt*, value: felt) -> felt {
 }
 
 // @notice Split a felt into an array of bytes
-func felt_to_bytes(dst: felt*, value: felt) -> felt {
+func felt_to_bytes{range_check_ptr}(dst: felt*, value: felt) -> felt {
     alloc_locals;
     let (local bytes: felt*) = alloc();
     let bytes_len = felt_to_bytes_little(bytes, value);
