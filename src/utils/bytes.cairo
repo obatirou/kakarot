@@ -44,15 +44,34 @@ func felt_to_ascii{range_check_ptr}(dst: felt*, n: felt) -> felt {
 // @dev Use a hint from split_int
 func felt_to_bytes_little{range_check_ptr}(dst: felt*, value: felt) -> felt {
     alloc_locals;
+    if (value == 0) {
+        assert [dst] = 0;
+        return 1;
+    }
+
+    let (high, low) = split_felt(value);
+    if (high != 0) {
+        let bytes_used_high = bytes_used_128(high);
+        tempvar total_bytes_used = 16 + bytes_used_high;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        let bytes_used_low = bytes_used_128(low);
+        tempvar total_bytes_used = bytes_used_low;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    local total_bytes_used = [ap - 2];
+    let range_check_ptr = [ap - 1];
 
     tempvar range_check_ptr = range_check_ptr;
     tempvar value = value;
     tempvar bytes_len = 0;
+    tempvar not_done = 1;
 
     body:
-    let range_check_ptr = [ap - 3];
-    let value = [ap - 2];
-    let bytes_len = [ap - 1];
+    let range_check_ptr = [ap - 4];
+    let value = [ap - 3];
+    let bytes_len = [ap - 2];
+    let total_bytes_used = [fp];
     let bytes = cast([fp - 4], felt*);
     let output = bytes + bytes_len;
     let base = 2 ** 8;
@@ -63,7 +82,7 @@ func felt_to_bytes_little{range_check_ptr}(dst: felt*, value: felt) -> felt {
         assert res < ids.bound, f'split_int(): Limb {res} is out of range.'
     %}
     let byte = [output];
-    let is_inf_base = is_le_felt(byte, base - 1);
+    let is_inf_base = is_le_felt(byte, bound - 1);
     with_attr error_message("output superior to base") {
         assert is_inf_base = 1;
     }
@@ -72,37 +91,20 @@ func felt_to_bytes_little{range_check_ptr}(dst: felt*, value: felt) -> felt {
     tempvar range_check_ptr = range_check_ptr;
     tempvar value = value;
     tempvar bytes_len = bytes_len + 1;
+    tempvar not_done = total_bytes_used - bytes_len;
 
-    jmp body if value != 0;
+    jmp body if not_done != 0;
 
-    let range_check_ptr = [ap - 3];
-    let value = [ap - 2];
-    let bytes_len = [ap - 1];
+    let range_check_ptr = [ap - 4];
+    let total_bytes_len = [fp];
+    let value = [ap - 3];
     assert value = 0;
 
-    let (high, low) = split_felt([fp - 3]);
-    local max_bytes_used: felt;
-    if (high == 0) {
-        let max_bytes_used_low = bytes_used_128(low);
-        // bytes_used_128 sends back 0 if input equals 0
-        if (max_bytes_used_low == 0) {
-            assert max_bytes_used = 1;
-        } else {
-            assert max_bytes_used = max_bytes_used_low;
-        }
-        tempvar range_check_ptr = range_check_ptr;
-    } else {
-        let max_bytes_used_high = bytes_used_128(high);
-        assert max_bytes_used = max_bytes_used_high + 16;
-        tempvar range_check_ptr = range_check_ptr;
-    }
-    let is_inf_to_max = is_le_felt(bytes_len, max_bytes_used);
-    tempvar range_check_ptr = range_check_ptr;
     with_attr error_message("bytes_len superior to max_bytes_used") {
-        assert is_inf_to_max = 1;
+        assert value = 0;
     }
 
-    return bytes_len;
+    return total_bytes_len;
 }
 
 func bytes_used_128{range_check_ptr}(value: felt) -> felt {
