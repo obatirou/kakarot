@@ -98,7 +98,6 @@ func felt_to_bytes_little{range_check_ptr}(dst: felt*, value: felt) -> felt {
     let range_check_ptr = [ap - 4];
     let total_bytes_len = [fp];
     let value = [ap - 3];
-    assert value = 0;
 
     with_attr error_message("bytes_len superior to max_bytes_used") {
         assert value = 0;

@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import integers
 
 from tests.utils.errors import cairo_error
@@ -41,17 +41,21 @@ class TestBytes:
 
         @given(
             n=integers(
-                min_value=452312848583266388373324160190187140051835877600158453279131187530910663137,
-                max_value=452312848583266388373324160190187140051835877600158453279131187530910663137,
+                min_value=1,
+                max_value=2**248,
             ).filter(lambda x: x != 256)
         )
+        @settings(max_examples=500)
         def test_should_raise_bytes_len_superior_to_max_bytes_used(
             self, cairo_program, cairo_run, n
         ):
-            with patch_hint(
-                cairo_program,
-                "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'",
-                f"if ids.value == {452312848583266388373324160190187140051835877600158453279131187530910663137}:\n    memory[ids.output] = 0\nelse:\n    memory[ids.output] = (int(ids.value) % PRIME) % ids.base",
+            with (
+                patch_hint(
+                    cairo_program,
+                    "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'",
+                    f"if ids.value == {n}:\n    memory[ids.output] = 0\nelse:\n    memory[ids.output] = (int(ids.value) % PRIME) % ids.base",
+                ),
+                cairo_error(message="bytes_len superior to max_bytes_used"),
             ):
                 output = cairo_run("test__felt_to_bytes_little", n=n)
                 res = bytes(output)
