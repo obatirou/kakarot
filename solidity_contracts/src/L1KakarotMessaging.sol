@@ -2,14 +2,10 @@
 pragma solidity 0.8.27;
 
 import {AddressAliasHelper} from "./AddressAliasHelper.sol";
-import {IStarknetMessaging} from "../starknet/IStarknetMessaging.sol";
+import {IStarknetMessaging} from "./interfaces/IStarknetMessaging.sol";
+import {IL1KakarotMessaging} from "./interfaces/IL1KakarotMessaging.sol";
 
-interface IL1KakarotMessaging {
-    function sendMessageToL2(address to, uint248 value, bytes memory data) external payable;
-    function consumeMessageFromL2(address fromAddress, bytes calldata payload) external;
-}
-
-contract L1KakarotMessaging {
+contract L1KakarotMessaging is IL1KakarotMessaging {
     /// @dev The selector of the function to call on the L2 contract.
     uint256 public constant HANDLE_L1_MESSAGE_SELECTOR = uint256(keccak256("handle_l1_message")) % 2 ** 250;
 

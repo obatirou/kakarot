@@ -1,0 +1,8 @@
+base64-sol/=solidity_contracts/lib/base64-sol/
+ds-test/=solidity_contracts/lib/forge-std/lib/ds-test/src/
+forge-std/=solidity_contracts/lib/forge-std/src/
+kakarot-lib/=solidity_contracts/lib/kakarot-lib/src/
+openzeppelin/=solidity_contracts/lib/openzeppelin/contracts/
+v3-core/=solidity_contracts/lib/v3-core/
+mocks/=solidity_contracts/mocks
+L1L2Messaging/=solidity_contracts/src/L1L2Messaging

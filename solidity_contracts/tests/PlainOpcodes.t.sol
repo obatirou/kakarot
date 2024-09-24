@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {PlainOpcodes} from "../src/PlainOpcodes/PlainOpcodes.sol";
-import {ContractRevertsOnMethodCall, ContractWithSelfdestructMethod} from "../src/PlainOpcodes/RevertTestCases.sol";
-import {Counter} from "../src/PlainOpcodes/Counter.sol";
+import {PlainOpcodes} from "mocks/PlainOpcodes/PlainOpcodes.sol";
+import {ContractRevertsOnMethodCall, ContractWithSelfdestructMethod} from "mocks/PlainOpcodes/RevertTestCases.sol";
+import {Counter} from "mocks/PlainOpcodes/Counter.sol";
 
 contract PlainOpcodesTest is Test {
     PlainOpcodes plainOpcodes;

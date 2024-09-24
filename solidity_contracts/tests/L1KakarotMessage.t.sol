@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import {L1KakarotMessaging} from "../src/L1L2Messaging/L1KakarotMessaging.sol";
-import {StarknetMessagingLocal} from "../src/starknet/StarknetMessagingLocal.sol";
+import {L1KakarotMessaging} from "src/L1KakarotMessaging.sol";
+import {StarknetMessagingLocal} from "mocks/starknet/StarknetMessagingLocal.sol";
 
 contract L1KakarotMessagingTest is Test {
     L1KakarotMessaging l1KakarotMessaging;
