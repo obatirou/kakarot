@@ -27,6 +27,15 @@ async def cairo_counter_caller(cairo_counter):
     )
 
 
+@pytest_asyncio.fixture(scope="module")
+async def kakarotReentrancy(kakarot):
+    return await deploy(
+        "CairoPrecompiles",
+        "KakarotReentrancyTest",
+        kakarot.address,
+    )
+
+
 @pytest.mark.asyncio(scope="module")
 @pytest.mark.CairoPrecompiles
 class TestCairoPrecompiles:
@@ -76,3 +85,33 @@ class TestCairoPrecompiles:
                 "EVM tx reverted, reverting SN tx because of previous calls to cairo precompiles"
             ):
                 await cairo_counter_caller.incrementCairoCounterCallcode()
+
+    class TestReentrancyKakarot:
+        async def test_should_fail_when_reentrancy(
+            self, kakarot, kakarotReentrancy, new_eoa
+        ):
+            eoa = await new_eoa()
+            # result = await kakarot.functions["eth_call"].call(
+            #     nonce=0,
+            #     origin=int(eoa.address, 16),
+            #     to={"is_some": 1, "value": 0xDEAD},
+            #     gas_limit=TRANSACTION_GAS_LIMIT,
+            #     gas_price=1_000,
+            #     value=1_000,
+            #     data=bytes(),
+            #     access_list=[],
+            # )
+
+            kakarot_call = kakarot.functions["eth_call"].prepare_call(
+                nonce=0,
+                origin=int(eoa.address, 16),
+                to={"is_some": 1, "value": 0xDEAD},
+                gas_limit=41000,
+                gas_price=1_000,
+                value=1_000,
+                data=bytes(),
+                access_list=[],
+            )
+
+            encoded_calldata = encode(["uint256[]"], [kakarot_call.calldata])
+            await kakarotReentrancy.staticcallKakarot("eth_call", encoded_calldata)
